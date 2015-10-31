@@ -2,7 +2,7 @@
 Repository für den Arduino im Modul AITEC an der Hochschule Luzern
 
 ## Installation
-- Load Librarys
+Es müssen Libraries installiert werden.
 
 - cd /home/aitec/sketchbook/libraries
 - git clone https://github.com/Seeed-Studio/Grove_Barometer_Sensor
