@@ -6,6 +6,7 @@
 #include <Wire.h>
 
 // REST
+#include <SPI.h>
 #include <Ethernet.h>
 #include "RestClient.h"
 
@@ -31,7 +32,7 @@ void setup()
   pinMode(BUTTON_PIN, INPUT);
   
   // Barometer
-  myBarometer.init();
+  // myBarometer.init();
 }
 
 void loop()
