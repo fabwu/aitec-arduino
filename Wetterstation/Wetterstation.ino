@@ -1,11 +1,10 @@
-// Temperatur & Luftfeuchtigkeit
-#include <DHT22.h>
+nclude <DHT22.h>
 
 // Barometer
 #include <Barometer.h>
 #include <Wire.h>
 
-// REST
+// REST-Client
 #include <SPI.h>
 #include <Ethernet.h>
 #include "RestClient.h"
@@ -18,13 +17,14 @@
 const int DURATION_MEASUREMENTS_MILLIS = 4000;
 const int DURATION_NEW_MEASURING_INTERVAL_MILLIS = 3000;
 
-//Rest Init
-//IP of target
+// REST-Server
 RestClient restClient = RestClient("192.168.17.115",80);
+
+// MAC & IP Address of arduino
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-//the IP address for the shield:
 byte ip[] = { 192, 168, 17, 10 };
 
+// Sensoren
 DHT22 dht = DHT22(DHT_PIN);
 Barometer myBarometer;
 
@@ -32,11 +32,11 @@ void setup()
 {
   // Serial
   Serial.begin(9600);
+  Serial.println("start");
   
   //Ethernet
   Ethernet.begin(mac,ip);
-  Serial.println("set up ");
-  
+    
   // Button
   pinMode(BUTTON_PIN, INPUT);
   
@@ -60,34 +60,25 @@ void loop()
       currentIntervalMessungen = 0;
       
       // Read sensor values
-      float airPressure;
-      airPressure = myBarometer.bmp085GetPressure(myBarometer.bmp085ReadUP());
-             
-      Serial.print("Pressure: ");
-      Serial.print(airPressure, 0); //whole number only.
-      Serial.println(" Pa");      
-      
+      float airPressure = myBarometer.bmp085GetPressure(myBarometer.bmp085ReadUP());
       dht.readData();
       int humidity = dht.getHumidityInt() / 10;
       int temperature = dht.getTemperatureCInt() / 10;
       
-      //Set Contenttype of the RestClient
+      // ContenType
       String contentType = "application/json ";
-      char contentT[contentType.length()];
-      contentType.toCharArray(contentT, contentType.length());
-      restClient.setContentType(contentT);
-      
-      Serial.println(airPressure);
-      
-      String airPressureString = String((int)(airPressure/100));
+      char contentTypeArray[contentType.length()];
+      contentType.toCharArray(contentTypeArray, contentType.length());
+      restClient.setContentType(contentTypeArray);
       
       // Create rest json paramaters
-      String req = "{\"temperature\": " + String(temperature) + "," + "\"humidity\": " + String(humidity) + "," + "\"pressure\": " + airPressureString + "} ";
-      char request[req.length()];
-      req.toCharArray(request, req.length());
-      
+      String request = "{\"temperature\": " + String(temperature) + "," + "\"humidity\": " + String(humidity) + "," + "\"pressure\": " + String((int)(airPressure/100)) + "}";
+      char requestArray[request.length() + 1];
+      request.toCharArray(requestArray, request.length() + 1);
+            
       // Send REST Request
-      int statusCode = restClient.post("/measurements.json", request);
+      Serial.println(request);
+      int statusCode = restClient.post("/measurements.json", requestArray);
     }
     currentIntervalMessungen = currentIntervalMessungen + intervalLoop;
     
@@ -96,8 +87,8 @@ void loop()
     if (buttonState == HIGH) {
       currentIntervalButton = currentIntervalButton + intervalLoop;
       if (currentIntervalButton >= DURATION_NEW_MEASURING_INTERVAL_MILLIS) {
-        Serial.println("Start new interval");
-        // TODO Send REST Request -> Start new interval
+        Serial.println("start new interval");
+        int statusCode = restClient.post("/intervals.json", "");
         currentIntervalButton = 0;
       }      
     } else {
@@ -107,4 +98,3 @@ void loop()
     delay(intervalLoop);
   }
 }
-
